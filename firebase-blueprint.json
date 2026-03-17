@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "Client": {
+      "title": "Client",
+      "description": "A company or entity that uses the portal.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Client name" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A portal user (Admin or Client User).",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "USUARIO"] },
+        "clientId": { "type": "string", "description": "ID of the client this user belongs to (null for ADMIN)" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "name", "role"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "A support or task ticket.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["A fazer", "Em andamento", "Aguardando cliente", "Concluído"] },
+        "responsible": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "clientId": { "type": "string" }
+      },
+      "required": ["title", "status", "clientId"]
+    },
+    "Meeting": {
+      "title": "Meeting",
+      "description": "A scheduled meeting.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "link": { "type": "string" },
+        "responsible": { "type": "string" },
+        "clientId": { "type": "string" }
+      },
+      "required": ["title", "date", "clientId"]
+    },
+    "Material": {
+      "title": "Material",
+      "description": "A PDF or video resource.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["pdf", "video"] },
+        "url": { "type": "string" },
+        "category": { "type": "string", "enum": ["Onboarding", "Treinamentos", "Atualizações"] },
+        "clientId": { "type": "string" }
+      },
+      "required": ["title", "type", "url", "clientId"]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": { "schema": "Client", "description": "Client data" },
+    "/users/{userId}": { "schema": "User", "description": "User profile and role" },
+    "/tickets/{ticketId}": { "schema": "Ticket", "description": "Tickets" },
+    "/meetings/{meetingId}": { "schema": "Meeting", "description": "Agenda items" },
+    "/materials/{materialId}": { "schema": "Material", "description": "Learning materials" }
+  }
+}

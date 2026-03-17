@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'ADMIN';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function belongsToClient(clientId) {
+      return isAuthenticated() && (getUserData().clientId == clientId || isAdmin());
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Clients collection
+    match /clients/{clientId} {
+      allow read: if belongsToClient(clientId);
+      allow write: if isAdmin();
+    }
+
+    // Tickets, Meetings, Materials
+    match /tickets/{id} {
+      allow read: if isAuthenticated() && (belongsToClient(resource.data.clientId) || isAdmin());
+      allow write: if isAdmin() || (isAuthenticated() && belongsToClient(request.resource.data.clientId));
+    }
+    
+    match /meetings/{id} {
+      allow read: if isAuthenticated() && (belongsToClient(resource.data.clientId) || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    match /materials/{id} {
+      allow read: if isAuthenticated() && (belongsToClient(resource.data.clientId) || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
