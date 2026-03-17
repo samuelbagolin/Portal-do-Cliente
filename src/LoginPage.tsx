@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +22,37 @@ export const LoginPage: React.FC = () => {
       navigate('/');
     } catch (err: any) {
       setError('E-mail ou senha inválidos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user profile exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        // Create a default profile for Google users if it doesn't exist
+        await setDoc(doc(db, 'users', user.uid), {
+          name: user.displayName || 'Usuário Google',
+          email: user.email,
+          role: 'USUARIO',
+          clientId: null,
+          photoURL: user.photoURL,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      navigate('/');
+    } catch (err: any) {
+      console.error(err);
+      setError('Erro ao entrar com Google.');
     } finally {
       setLoading(false);
     }
@@ -94,6 +126,26 @@ export const LoginPage: React.FC = () => {
             )}
           </button>
         </form>
+
+        <div className="mt-6">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Ou continue com</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+            <span className="text-gray-700 font-medium">Entrar com Google</span>
+          </button>
+        </div>
 
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">

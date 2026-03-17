@@ -53,9 +53,17 @@ export const Sidebar: React.FC = () => {
       });
       
       // The profile in AuthContext should update automatically if it's listening to snapshots
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading profile photo:', error);
-      alert('Erro ao carregar foto de perfil.');
+      let message = 'Erro ao carregar foto de perfil.';
+      if (error.code === 'storage/unauthorized') {
+        message = 'Sem permissão para carregar arquivos. Verifique as regras do Firebase Storage.';
+      } else if (error.code === 'storage/retry-limit-exceeded') {
+        message = 'Limite de tentativas excedido. Verifique sua conexão.';
+      } else if (error.message.includes('Identity Toolkit')) {
+        message = 'Erro de API: Ative a Identity Toolkit API no Google Cloud Console.';
+      }
+      alert(message);
     } finally {
       setUploading(false);
     }

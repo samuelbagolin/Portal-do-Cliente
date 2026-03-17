@@ -50,7 +50,15 @@ export const UsersPage: React.FC = () => {
         body: JSON.stringify(newUser)
       });
 
-      const result = await response.json();
+      let result;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        result = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Server returned non-JSON response:", text);
+        throw new Error('O servidor retornou um erro inesperado. Verifique se a API do Identity Toolkit está ativada no Google Cloud Console.');
+      }
 
       if (!response.ok) {
         throw new Error(result.error || 'Erro ao criar usuário');
@@ -68,12 +76,24 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleDelete = async (uid: string) => {
-    if (!confirm('Excluir este usuário?')) return;
+    if (!confirm('Excluir este usuário permanentemente?')) return;
     try {
-      await deleteDoc(doc(db, 'users', uid));
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid })
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Erro ao excluir usuário');
+      }
+
       fetchData();
-    } catch (error) {
+      alert('Usuário excluído com sucesso!');
+    } catch (error: any) {
       console.error(error);
+      alert(error.message);
     }
   };
 

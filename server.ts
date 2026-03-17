@@ -84,6 +84,23 @@ async function startServer() {
     }
   });
 
+  app.post("/api/admin/delete-user", async (req, res) => {
+    const { uid } = req.body;
+    
+    try {
+      // 1. Delete user from Firebase Auth
+      await auth_admin.deleteUser(uid);
+
+      // 2. Delete user profile from Firestore
+      await db_admin.collection('users').doc(uid).delete();
+
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
